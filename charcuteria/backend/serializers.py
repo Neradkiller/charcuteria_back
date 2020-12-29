@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from backend.models import User, Perfil
+from backend.models import User, Perfil, Direccion
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
@@ -17,18 +17,26 @@ class UserSerializer(serializers.ModelSerializer):
         model = Perfil
         fields = ('name', 'name1', 'lastname','lastname1', 'doc_identidad')
 
+class UserDirecctionsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Direccion
+        fields = ('direccion',)
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
 
     profile = UserSerializer(required=False)
+    direccion = UserDirecctionsSerializer(required=False)
 
     class Meta:
         model = User
-        fields = ('email','password', 'profile')
+        fields = ('email','password', 'profile', 'direccion')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
 
         profile_data = validated_data.pop('profile')
+        direccion_data = validated_data.pop('direccion')
         user = User.objects.create_user(**validated_data)
 
         Perfil.objects.create(
@@ -39,6 +47,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             lastname1=profile_data['lastname1'],
             doc_identidad=profile_data['doc_identidad']
         )
+
+        Direccion.objects.create(
+            user=user,
+            direccion=direccion_data['direccion']
+        )
+
         return user
 
 class UserLoginSerializer(serializers.Serializer):

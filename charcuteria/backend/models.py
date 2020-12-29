@@ -60,6 +60,13 @@ class User(AbstractBaseUser):
     class Meta:
         db_table = 'cliente'
 
+class Direccion(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='direccion')
+    direccion = models.CharField(max_length=400, blank=False, null=False)
+
+    class Meta:
+        db_table = 'direccion'
+
 class Perfil(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
