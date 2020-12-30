@@ -4,27 +4,34 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email, password=None, role=None):
         if not email:
             raise ValueError("Usuario debe tener email")
         user = self.model(
             email=self.normalize_email(email),
         )
         user.set_password(password)
+        user.is_super = False
+        user.is_staff = False
+        user.is_admin = False
+        user.role = role
         user.save(using=self.db)
         return user
 
-    def create_superuser(self, email, password):
-        if password is None:
-            raise TypeError('Superusuarios deben tener contraseña.')
 
-        user = self.create_user(email, password)
+    def create_superuser(self, email, password=None):
+
+        if not email:
+            raise ValueError("Usuario debe tener email")
+        user = self.model(
+            email=self.normalize_email(email),
+        )
+        user.set_password(password)
         user.is_super = True
         user.is_staff = True
         user.is_admin = True
         user.role = 'A'
-        user.save()
-
+        user.save(using=self.db)
         return user
 
 
@@ -39,10 +46,10 @@ class User(AbstractBaseUser):
     password = models.CharField(max_length=128, null=True, blank=True, verbose_name='password')
     date_joined = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)   
-    is_super = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
-    role = models.CharField(max_length=1, choices=ROLE_CHOICES, default='C')
+    is_super = models.BooleanField(null=True, blank=True,)
+    is_staff = models.BooleanField(null=True, blank=True,)
+    is_admin = models.BooleanField(null=True, blank=True,)
+    role = models.CharField(max_length=1, choices=ROLE_CHOICES,)
     
     def has_perm(self, perm, obj=None):
         return self.is_super
@@ -78,3 +85,19 @@ class Perfil(models.Model):
 
     class Meta:
         db_table = 'perfil'
+
+class Producto(models.Model):
+    
+    id = models.AutoField(primary_key=True)
+    codigo = models.CharField(max_length=5, blank=False, null=False, unique=True)
+    nombre = models.CharField(max_length=50, blank=False, null=False)
+    descripcion = models.CharField(max_length=300, blank=False, null=False)
+    marca = models.CharField(max_length=50, blank=False, null=False)
+    tipo = models.CharField(max_length=50, blank=False, null=False)
+    fecha_vencimiento = models.DateField(blank=False, null=False)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, blank=False, null=False, default=0)
+    peso_kg = models.DecimalField(max_digits=10, decimal_places=2, blank=False, null=False, default=0)
+
+    class Meta:
+        db_table = 'producto'
+

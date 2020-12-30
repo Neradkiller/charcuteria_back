@@ -1,11 +1,10 @@
-from rest_framework import serializers
-from backend.models import User, Perfil, Direccion
-
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
 
+from backend.models import (Direccion, Perfil, Producto,
+                            User, UserManager)
 
 JWT_PAYLOAD_HANDLER = api_settings.JWT_PAYLOAD_HANDLER
 JWT_ENCODE_HANDLER = api_settings.JWT_ENCODE_HANDLER
@@ -37,7 +36,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         profile_data = validated_data.pop('profile')
         direccion_data = validated_data.pop('direccion')
-        user = User.objects.create_user(**validated_data)
+        role = 'C'
+        user = User.objects.create_user(validated_data['email'],validated_data['password'], role)
 
         Perfil.objects.create(
             user=user,
@@ -52,8 +52,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             user=user,
             direccion=direccion_data['direccion']
         )
-
         return user
+
 
 class UserLoginSerializer(serializers.Serializer):
 
@@ -81,3 +81,40 @@ class UserLoginSerializer(serializers.Serializer):
             'email':user.role,
             'token': jwt_token,
         }
+
+
+class productSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField(read_only=True)
+    codigo = serializers.CharField(max_length=5)
+    nombre = serializers.CharField(max_length=50)
+    descripcion = serializers.CharField(max_length=300)
+    marca = serializers.CharField(max_length=50)
+    tipo = serializers.CharField(max_length=50)
+    fecha_vencimiento = serializers.DateField()
+    precio = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
+    peso_kg = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+
+    def create(self, validated_data):
+        """
+        Crear un objeto de tipo Producto y le asocia su precio
+        """
+        producto = Producto.objects.create(**validated_data)
+        return producto
+    
+    def update(self, instance, validated_data):
+        """
+        Actualiza los datos basicos asociados a un producto
+        """
+        instance.codigo = validated_data.get('codigo', instance.codigo)
+        instance.nombre = validated_data.get('nombre', instance.nombre)
+        instance.descripcion = validated_data.get('descripcion', instance.descripcion)
+        instance.marca = validated_data.get('marca', instance.marca)
+        instance.tipo = validated_data.get('tipo', instance.tipo)
+        instance.fecha_vencimiento = validated_data.get('fecha_vencimiento', instance.fecha_vencimiento)
+        instance.precio = validated_data.get('precio', instance.precio)
+        instance.peso_kg = validated_data.get('peso_kg', instance.peso_kg)
+        instance.save()
+        return instance
+
