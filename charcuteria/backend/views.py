@@ -38,16 +38,25 @@ class UserRegistrationView(CreateAPIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        status_code = status.HTTP_201_CREATED
+        cedula = request.data["profile"]["doc_identidad"]
+        if(cedula.isdigit()):
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            status_code = status.HTTP_201_CREATED
 
-        response = {
-            'success': True,
-            'msg': 'Usuario registrado exitosamente',
-            'status': status_code
-        }
+            response = {
+                'success': True,
+                'msg': 'Usuario registrado exitosamente',
+                'status': status_code
+            }
+        else:
+            status_code = status.HTTP_200_OK
+            response = {
+                'success': False,
+                'msg': 'La cedula no puede contener ni letras ni caracteres especiales',
+                'status': status_code
+                }
 
         return Response(response, status=status_code)
 
@@ -61,11 +70,20 @@ def product_list(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        serializer = productSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if(request.data["codigo"].isdigit()):
+            serializer = productSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            status_code = status.HTTP_200_OK
+            response = {
+                'success': False,
+                'msg': 'El codigo solo puede contener numeros',
+                'status': status_code
+                }
+            return Response(response, status=status_code)
 
 
 
